@@ -452,11 +452,33 @@ def generate_linkedin_message(email):
             return jsonify({'success': False, 'message': '未找到该联系人'})
 
         contact_dict = dict(contact)
-        message = _generate_message_content(contact_dict)
+        result = _generate_message_content(contact_dict)
+        subject = result['subject']
+        message = result['message']
+
+        # LinkedIn InMail limits: Subject ~200 chars, Body ~1900 chars
+        # Connection request: ~300 chars
+        subject_limit = 200
+        message_limit = 1900
+
+        subject_length = len(subject)
+        message_length = len(message)
+
+        subject_warning = subject_length > subject_limit
+        message_warning = message_length > message_limit
 
         return jsonify({
             'success': True,
+            'subject': subject,
             'message': message,
+            'length_info': {
+                'subject_length': subject_length,
+                'subject_limit': subject_limit,
+                'subject_warning': subject_warning,
+                'message_length': message_length,
+                'message_limit': message_limit,
+                'message_warning': message_warning
+            },
             'contact': {
                 'name': contact_dict.get('name'),
                 'title': contact_dict.get('title'),
@@ -469,13 +491,21 @@ def generate_linkedin_message(email):
         return jsonify({'success': False, 'message': str(e)})
 
 def _generate_message_content(contact):
-    """生成个性化LinkedIn邀请消息"""
+    """生成个性化LinkedIn邀请消息，返回标题和消息内容"""
     name = contact.get('name', '').split()[0] if contact.get('name') else 'there'
     title = contact.get('title', '')
     company = contact.get('company', '')
     industry = contact.get('industry', '')
     background = contact.get('background', '')
     approach = contact.get('approach', '')
+
+    # 生成吸引人的标题
+    if industry:
+        subject = f"Exclusive Invite: AI Roundtable for {industry} Leaders at Microsoft Singapore"
+    elif company:
+        subject = f"Exclusive Invite: AI Executive Roundtable at Microsoft Singapore"
+    else:
+        subject = "Exclusive Invite: AI Roundtable at Microsoft Singapore - 12 Seats Only"
 
     # 根据职位确定称呼
     if any(term in title.upper() for term in ['CEO', 'CHIEF', 'PRESIDENT', 'FOUNDER', 'MANAGING DIRECTOR']):
@@ -494,6 +524,9 @@ def _generate_message_content(contact):
         personalized_reason = f"As a leader in the {industry} industry, your insights on AI implementation would greatly enrich our discussion."
     else:
         personalized_reason = f"Given your role as {title} at {company}, I believe your perspective would add tremendous value to this conversation."
+
+    # 活动报名链接
+    event_link = "https://www.linkedin.com/events/7435129035216678912?viewAsMember=true"
 
     # 核心邀请内容
     message = f"""{greeting},
@@ -514,12 +547,14 @@ This is an intimate executive roundtable limited to just 12 seats, designed for 
 
 Would you be interested in joining us? I'd be happy to share more about the agenda and confirmed participants.
 
+Register here: {event_link}
+
 Looking forward to hearing from you!
 
 Best regards,
 Chunbo"""
 
-    return message
+    return {'subject': subject, 'message': message}
 
 # 在应用加载时初始化数据库（Gunicorn启动时也会执行）
 try:

@@ -14,7 +14,8 @@ EVENT_INFO = {
     'time': '9:30 AM',
     'location': 'Microsoft Singapore, Frasers Tower',
     'seats': '12',
-    'focus': 'AI从试点到基础设施的转变'
+    'focus': 'AI从试点到基础设施的转变',
+    'register_link': 'https://www.linkedin.com/events/7435129035216678912?viewAsMember=true'
 }
 
 def generate_message(contact):
@@ -79,6 +80,8 @@ We're hosting an exclusive **invite-only roundtable** at **Microsoft Singapore o
 Given your role as {title} at {company}, your insights would be invaluable to this conversation."""
 
     # 根据切入点添加个性化结尾
+    register_link = EVENT_INFO['register_link']
+
     if approach:
         closing = f"""
 
@@ -86,16 +89,20 @@ Given your role as {title} at {company}, your insights would be invaluable to th
 
 Would you be available to join us? I'd be happy to share more details about the agenda and participants.
 
+Register here: {register_link}
+
 Looking forward to your thoughts!
 
 Best regards,
 Chunbo"""
     else:
-        closing = """
+        closing = f"""
 
 This is a unique opportunity to connect with peers tackling similar challenges. Would you be available to join us?
 
 I'd be happy to share more details about the full agenda and confirmed participants.
+
+Register here: {register_link}
 
 Looking forward to hearing from you!
 
