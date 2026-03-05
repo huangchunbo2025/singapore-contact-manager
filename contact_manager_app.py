@@ -87,7 +87,30 @@ def init_db():
     ''')
 
     conn.commit()
-    conn.close()
+
+    # 检查数据库是否为空，如果为空则自动导入初始数据
+    cursor.execute('SELECT COUNT(*) FROM contacts WHERE is_deleted = 0')
+    count = cursor.fetchone()[0]
+
+    if count == 0:
+        print("📦 数据库为空，正在导入初始数据...")
+        # 检查 data.csv 文件是否存在
+        data_file = os.path.join(os.path.dirname(__file__), 'data.csv')
+        if os.path.exists(data_file):
+            try:
+                # 关闭当前连接，使用 import_csv_data 函数
+                conn.close()
+                import_csv_data(data_file)
+                print(f"✅ 成功导入初始数据（{data_file}）")
+            except Exception as e:
+                print(f"⚠️ 导入初始数据失败：{e}")
+        else:
+            print(f"⚠️ 初始数据文件不存在：{data_file}")
+            conn.close()
+    else:
+        print(f"ℹ️ 数据库已有 {count} 条记录，跳过初始导入")
+        conn.close()
+
     print("✅ 数据库初始化完成")
 
 # 导入CSV数据
