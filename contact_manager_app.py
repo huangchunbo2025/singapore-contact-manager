@@ -88,6 +88,7 @@ def init_db():
 
     conn.commit()
     conn.close()
+    print("✅ 数据库初始化完成")
 
 # 导入CSV数据
 def import_csv_data(filepath):
@@ -301,6 +302,17 @@ def export_to_csv(filename):
     return filepath
 
 # 路由
+# 全局错误处理
+@app.errorhandler(Exception)
+def handle_error(error):
+    print(f"❌ 全局错误：{error}")
+    if request.path.startswith('/api/'):
+        # API 请求返回 JSON
+        return jsonify({'success': False, 'message': str(error), 'data': []}), 500
+    else:
+        # 页面请求返回错误页面
+        return f"<h1>Error</h1><p>{error}</p>", 500
+
 @app.route('/')
 def index():
     return render_template('index.html')
@@ -401,13 +413,19 @@ def export_data():
     else:
         return jsonify({'success': False, 'message': '导出失败'})
 
-if __name__ == '__main__':
+# 在应用加载时初始化数据库（Gunicorn启动时也会执行）
+try:
     init_db()
+    print("🚀 应用启动：数据库初始化成功")
+except Exception as e:
+    print(f"⚠️ 数据库初始化警告：{e}")
+
+if __name__ == '__main__':
+    # 本地开发模式
     print("=" * 60)
     print("🎯 新加坡活动联系人管理系统")
     print("=" * 60)
-    print("📊 数据库已初始化")
-    print("🌐 服务器启动中...")
+    print("🌐 本地开发服务器启动中...")
     port = int(os.environ.get('PORT', 5000))
     host = os.environ.get('HOST', '0.0.0.0')
     print(f"📍 服务器地址: {host}:{port}")
