@@ -17,10 +17,10 @@ app = Flask(__name__)
 IS_PRODUCTION = os.environ.get('PORT') is not None
 
 if IS_PRODUCTION:
-    # 生产环境：使用 /tmp 目录（可写）
-    app.config['UPLOAD_FOLDER'] = '/tmp/uploads'
-    app.config['DATABASE'] = '/tmp/contacts.db'
-    print("🌐 生产环境模式：数据库位置 /tmp/contacts.db")
+    # 生产环境：使用持久化存储 /data 目录
+    app.config['UPLOAD_FOLDER'] = '/data/uploads'
+    app.config['DATABASE'] = '/data/contacts.db'
+    print("🌐 生产环境模式：数据库位置 /data/contacts.db")
 else:
     # 本地开发环境
     app.config['UPLOAD_FOLDER'] = 'uploads'
