@@ -826,9 +826,12 @@
                     ${contact.linkedin ? `<div class="detail-row"><span class="detail-label">💼 LinkedIn:</span><span class="detail-value"><a href="${contact.linkedin}" target="_blank">查看个人资料</a></span></div>` : ''}
                 </div>
 
-                <div class="info-section">
-                    <button class="btn" style="width: 100%; background: #0077b5; color: white;" onclick="generateLinkedInMessage('${contact.email}')">
-                        📧 生成LinkedIn邀请消息
+                <div class="info-section" style="display: flex; gap: 10px;">
+                    <button class="btn" style="flex: 1; background: #0077b5; color: white;" onclick="copyLinkedInMessageDirect('${contact.email}')">
+                        📋 一键复制LinkedIn邀请消息
+                    </button>
+                    <button class="btn" style="background: #5f3a85; color: white;" onclick="generateLinkedInMessage('${contact.email}')">
+                        👁️ 预览
                     </button>
                 </div>
 
@@ -871,9 +874,9 @@
                     <h4>📞 联系方式状态</h4>
 
                     <div class="method-item">
-                        <span class="method-label">
-                            <svg class="method-icon" fill="currentColor" viewBox="0 0 24 24"><path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/></svg>
-                            LinkedIn
+                        <span class="method-label" style="cursor: pointer;" onclick="copyLinkedInMessageDirect('${contact.email}')" title="点击复制邀请消息">
+                            <svg class="method-icon" fill="#0077b5" viewBox="0 0 24 24"><path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/></svg>
+                            LinkedIn <span style="font-size: 10px; color: #0077b5;">(点击复制消息)</span>
                         </span>
                         <button class="status-btn ${contact.linkedin_contacted ? 'status-contacted' : 'status-not-contacted'}"
                                 onclick="toggleStatus('${contact.email}', 'linkedin_contacted', ${!contact.linkedin_contacted})">
@@ -1033,7 +1036,24 @@
             }
         }
 
-        // 生成LinkedIn消息
+        // 一键复制LinkedIn消息（不显示弹窗）
+        async function copyLinkedInMessageDirect(email) {
+            try {
+                const response = await fetch(`/api/generate_linkedin_message/${encodeURIComponent(email)}`);
+                const result = await response.json();
+
+                if (result.success) {
+                    await navigator.clipboard.writeText(result.message);
+                    showToast(`✅ 已复制 ${result.contact.name} 的LinkedIn邀请消息！`);
+                } else {
+                    showToast('生成失败: ' + (result.message || '未知错误'), 'error');
+                }
+            } catch (error) {
+                showToast('复制出错: ' + error.message, 'error');
+            }
+        }
+
+        // 生成LinkedIn消息（显示预览弹窗）
         async function generateLinkedInMessage(email) {
             try {
                 const response = await fetch(`/api/generate_linkedin_message/${encodeURIComponent(email)}`);

@@ -469,94 +469,57 @@ def generate_linkedin_message(email):
         return jsonify({'success': False, 'message': str(e)})
 
 def _generate_message_content(contact):
-    """生成消息内容"""
-    name = contact.get('name', '').split()[0] if contact.get('name') else 'Hi'
+    """生成个性化LinkedIn邀请消息"""
+    name = contact.get('name', '').split()[0] if contact.get('name') else 'there'
     title = contact.get('title', '')
     company = contact.get('company', '')
     industry = contact.get('industry', '')
-    employees = contact.get('employees', '')
     background = contact.get('background', '')
     approach = contact.get('approach', '')
-    ms_products = contact.get('ms_products', '')
 
     # 根据职位确定称呼
-    if any(term in title.upper() for term in ['CEO', 'CHIEF', 'PRESIDENT', 'FOUNDER']):
+    if any(term in title.upper() for term in ['CEO', 'CHIEF', 'PRESIDENT', 'FOUNDER', 'MANAGING DIRECTOR']):
         greeting = f"Dear {name}"
-    elif any(term in title.upper() for term in ['VP', 'DIRECTOR', 'HEAD']):
+    elif any(term in title.upper() for term in ['VP', 'DIRECTOR', 'HEAD', 'GENERAL MANAGER']):
         greeting = f"Hi {name}"
     else:
         greeting = f"Hello {name}"
 
-    # 个性化开场
-    if background and ('AI' in background or 'AI' in str(approach)):
-        opening = f"I noticed {company}'s progressive work in AI transformation, particularly in the {industry} sector."
-    elif ms_products and 'Azure' in ms_products:
-        opening = f"As {company} leverages Azure for digital transformation, I thought you'd be interested in this exclusive opportunity."
-    elif background and ('digital' in background.lower() or 'transformation' in background.lower()):
-        opening = f"Given {company}'s digital transformation journey in {industry}, I believe this would be highly relevant for you."
+    # 基于背景的个性化原因
+    if background:
+        personalized_reason = f"Given your background - {background[:200]}{'...' if len(background) > 200 else ''} - I believe your perspective would be invaluable to this discussion."
+    elif approach:
+        personalized_reason = f"I'm reaching out because {approach}"
+    elif industry:
+        personalized_reason = f"As a leader in the {industry} industry, your insights on AI implementation would greatly enrich our discussion."
     else:
-        opening = f"As a leader driving innovation at {company}, I wanted to personally invite you to an exclusive event."
-
-    # 根据公司规模定制内容
-    try:
-        emp_count = int(str(employees).replace('+', '').replace(',', '')) if employees else 0
-        if emp_count > 1000:
-            scale_note = "This enterprise-focused roundtable addresses the unique challenges large organizations face when scaling AI initiatives."
-        else:
-            scale_note = "This intimate roundtable brings together forward-thinking leaders to discuss practical AI implementation strategies."
-    except:
-        scale_note = "This intimate roundtable brings together forward-thinking leaders to discuss practical AI implementation strategies."
+        personalized_reason = f"Given your role as {title} at {company}, I believe your perspective would add tremendous value to this conversation."
 
     # 核心邀请内容
     message = f"""{greeting},
 
-{opening}
+I'm Chunbo from Socialhub.AI, and I'm excited to invite you to an exclusive event we're co-hosting with Microsoft.
 
-We're hosting an exclusive **invite-only roundtable** at **Microsoft Singapore on March 18th** (limited to just 12 C-level executives):
+**Socialhub.AI Global Tour - 3rd Stop: Singapore**
+**Topic: Retail AI - From Pilot to Infrastructure**
 
-**🎯 Socialhub.AI Global Tour - Singapore: From Pilot to Infrastructure**
+This is an intimate executive roundtable limited to just 12 seats, designed for senior leaders who are navigating the journey from AI experimentation to enterprise-scale implementation.
 
-**Why This Matters:**
-• 74% of AI initiatives never move beyond pilot stage
-• Focus: Architecture, governance & operational models (not just tools)
-• Real talk: Transitioning from fragmented pilots to enterprise-ready AI infrastructure
+**Event Details:**
+- Date: Wednesday, March 18th, 2026 (Morning session)
+- Venue: Microsoft Office, Singapore
+- Format: Closed-door roundtable discussion
 
-**Two Key Discussions:**
-1. From Pilot to Production-Ready AI Systems
-2. Loyalty Architecture Evolution in the AI Era
+{personalized_reason}
 
-{scale_note}
-
-**🗓️ March 18, 2026 | 9:30 AM**
-**📍 Microsoft Singapore, Frasers Tower (Level 23-25)**
-
-Given your role as {title} at {company}, your insights would be invaluable to this conversation."""
-
-    # 根据切入点添加个性化结尾
-    if approach:
-        closing = f"""
-
-**Why I'm reaching out:** {approach}
-
-Would you be available to join us? I'd be happy to share more details about the agenda and participants.
-
-Looking forward to your thoughts!
-
-Best regards,
-Chunbo"""
-    else:
-        closing = """
-
-This is a unique opportunity to connect with peers tackling similar challenges. Would you be available to join us?
-
-I'd be happy to share more details about the full agenda and confirmed participants.
+Would you be interested in joining us? I'd be happy to share more about the agenda and confirmed participants.
 
 Looking forward to hearing from you!
 
 Best regards,
 Chunbo"""
 
-    return message + closing
+    return message
 
 # 在应用加载时初始化数据库（Gunicorn启动时也会执行）
 try:
