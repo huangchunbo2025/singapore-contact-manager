@@ -12,16 +12,33 @@ from flask import Flask, render_template, request, jsonify, send_file
 from werkzeug.utils import secure_filename
 
 app = Flask(__name__)
-app.config['UPLOAD_FOLDER'] = 'uploads'
-app.config['DATABASE'] = 'contacts.db'
+
+# 检测是否在生产环境（Render/Heroku 等会设置 PORT 环境变量）
+IS_PRODUCTION = os.environ.get('PORT') is not None
+
+if IS_PRODUCTION:
+    # 生产环境：使用 /tmp 目录（可写）
+    app.config['UPLOAD_FOLDER'] = '/tmp/uploads'
+    app.config['DATABASE'] = '/tmp/contacts.db'
+    print("🌐 生产环境模式：数据库位置 /tmp/contacts.db")
+else:
+    # 本地开发环境
+    app.config['UPLOAD_FOLDER'] = 'uploads'
+    app.config['DATABASE'] = 'contacts.db'
+    print("💻 开发环境模式：数据库位置 contacts.db")
 
 # 确保上传文件夹存在
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
 # 数据库初始化
 def init_db():
-    conn = sqlite3.connect(app.config['DATABASE'])
-    cursor = conn.cursor()
+    try:
+        print(f"📊 初始化数据库：{app.config['DATABASE']}")
+        conn = sqlite3.connect(app.config['DATABASE'])
+        cursor = conn.cursor()
+    except Exception as e:
+        print(f"❌ 数据库连接失败：{e}")
+        raise
 
     # 联系人表
     cursor.execute('''
@@ -126,27 +143,32 @@ def import_csv_data(filepath):
 
 # 获取所有联系人（排除已删除）
 def get_all_contacts():
-    conn = sqlite3.connect(app.config['DATABASE'])
-    conn.row_factory = sqlite3.Row
-    cursor = conn.cursor()
+    try:
+        conn = sqlite3.connect(app.config['DATABASE'])
+        conn.row_factory = sqlite3.Row
+        cursor = conn.cursor()
 
-    cursor.execute('''
-        SELECT c.*,
-               COALESCE(s.linkedin_contacted, 0) as linkedin_contacted,
-               COALESCE(s.whatsapp_contacted, 0) as whatsapp_contacted,
-               COALESCE(s.email_contacted, 0) as email_contacted,
-               COALESCE(s.phone_contacted, 0) as phone_contacted,
-               COALESCE(s.notes, '') as notes,
-               s.last_updated
-        FROM contacts c
-        LEFT JOIN contact_status s ON c.email = s.email
-        WHERE c.is_deleted = 0
-        ORDER BY CAST(c.employees AS INTEGER) DESC
-    ''')
+        cursor.execute('''
+            SELECT c.*,
+                   COALESCE(s.linkedin_contacted, 0) as linkedin_contacted,
+                   COALESCE(s.whatsapp_contacted, 0) as whatsapp_contacted,
+                   COALESCE(s.email_contacted, 0) as email_contacted,
+                   COALESCE(s.phone_contacted, 0) as phone_contacted,
+                   COALESCE(s.notes, '') as notes,
+                   s.last_updated
+            FROM contacts c
+            LEFT JOIN contact_status s ON c.email = s.email
+            WHERE c.is_deleted = 0
+            ORDER BY CAST(c.employees AS INTEGER) DESC
+        ''')
 
-    contacts = [dict(row) for row in cursor.fetchall()]
-    conn.close()
-    return contacts
+        contacts = [dict(row) for row in cursor.fetchall()]
+        conn.close()
+        print(f"✅ 成功获取 {len(contacts)} 条联系人记录")
+        return contacts
+    except Exception as e:
+        print(f"❌ 获取联系人失败：{e}")
+        return []
 
 # 更新联系状态
 def update_contact_status(email, field, value):
@@ -307,8 +329,12 @@ def upload_csv():
 
 @app.route('/api/contacts')
 def get_contacts():
-    contacts = get_all_contacts()
-    return jsonify({'success': True, 'data': contacts})
+    try:
+        contacts = get_all_contacts()
+        return jsonify({'success': True, 'data': contacts})
+    except Exception as e:
+        print(f"❌ API错误：{e}")
+        return jsonify({'success': False, 'message': str(e), 'data': []})
 
 @app.route('/api/update_status', methods=['POST'])
 def update_status():
