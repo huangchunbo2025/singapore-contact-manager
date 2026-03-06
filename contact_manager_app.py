@@ -64,12 +64,15 @@ def init_db():
         )
     ''')
 
-    # 检查是否需要添加 is_deleted 列（兼容旧版本）
+    # 检查是否需要添加新列（兼容旧版本）
     cursor.execute("PRAGMA table_info(contacts)")
     columns = [column[1] for column in cursor.fetchall()]
     if 'is_deleted' not in columns:
         cursor.execute('ALTER TABLE contacts ADD COLUMN is_deleted INTEGER DEFAULT 0')
         print("✓ 已添加 is_deleted 列")
+    if 'phone' not in columns:
+        cursor.execute('ALTER TABLE contacts ADD COLUMN phone TEXT')
+        print("✓ 已添加 phone 列")
 
     # 联系状态表
     cursor.execute('''
@@ -126,31 +129,61 @@ def import_csv_data(filepath):
         reader = csv.DictReader(f)
         for row in reader:
             try:
+                # 检测CSV格式（Apollo格式 vs 旧格式）
+                is_apollo_format = 'First Name' in row or 'Email' in row
+
+                if is_apollo_format:
+                    # Apollo CSV 格式
+                    first_name = row.get('First Name', '')
+                    last_name = row.get('Last Name', '')
+                    name = f"{first_name} {last_name}".strip()
+                    title = row.get('Title', '')
+                    company = row.get('Company Name', '')
+                    email = row.get('Email', '')
+                    website = row.get('Website', '')
+                    linkedin = row.get('Person Linkedin Url', '')
+                    industry = row.get('Industry', '')
+                    employees = row.get('# Employees', '')
+                    # 获取手机号：优先 Mobile Phone > Work Direct Phone > Corporate Phone
+                    phone = row.get('Mobile Phone', '') or row.get('Work Direct Phone', '') or row.get('Corporate Phone', '')
+                    # Apollo格式没有这些字段
+                    priority = ''
+                    background = row.get('Keywords', '')[:500] if row.get('Keywords') else ''
+                    approach = ''
+                    ms_products = ''
+                    marketing_tech = row.get('Technologies', '')[:500] if row.get('Technologies') else ''
+                    is_global = ''
+                    global_reason = ''
+                else:
+                    # 旧的中文 CSV 格式
+                    name = row.get('姓名', '')
+                    title = row.get('职位', '')
+                    company = row.get('公司', '')
+                    email = row.get('邮箱', '')
+                    website = row.get('Website', '')
+                    linkedin = row.get('LinkedIn', '')
+                    industry = row.get('Industry', '')
+                    employees = row.get('Employees', '')
+                    phone = row.get('手机', '') or row.get('电话', '')
+                    priority = row.get('优先级', '')
+                    background = row.get('背景说明', '')
+                    approach = row.get('邀约切入点', '')
+                    ms_products = row.get('微软产品', '')
+                    marketing_tech = row.get('营销技术栈产品', '')
+                    is_global = row.get('全球性企业标记', '')
+                    global_reason = row.get('全球化判定依据', '')
+
                 cursor.execute('''
                     INSERT OR REPLACE INTO contacts
                     (name, title, company, email, website, linkedin, industry, employees,
-                     priority, background, approach, ms_products, marketing_tech, is_global, global_reason, is_deleted)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)
+                     priority, background, approach, ms_products, marketing_tech, is_global, global_reason, phone, is_deleted)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)
                 ''', (
-                    row.get('姓名', ''),
-                    row.get('职位', ''),
-                    row.get('公司', ''),
-                    row.get('邮箱', ''),
-                    row.get('Website', ''),
-                    row.get('LinkedIn', ''),
-                    row.get('Industry', ''),
-                    row.get('Employees', ''),
-                    row.get('优先级', ''),
-                    row.get('背景说明', ''),
-                    row.get('邀约切入点', ''),
-                    row.get('微软产品', ''),
-                    row.get('营销技术栈产品', ''),
-                    row.get('全球性企业标记', ''),
-                    row.get('全球化判定依据', '')
+                    name, title, company, email, website, linkedin, industry, employees,
+                    priority, background, approach, ms_products, marketing_tech, is_global, global_reason, phone
                 ))
 
                 # 初始化联系状态
-                email = row.get('邮箱', '')
                 if email:
                     cursor.execute('''
                         INSERT OR IGNORE INTO contact_status (email)

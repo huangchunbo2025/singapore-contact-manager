@@ -864,6 +864,7 @@
 
                 <div class="contact-details">
                     ${contact.email ? `<div class="detail-row"><span class="detail-label">📧 邮箱:</span><span class="detail-value">${contact.email}</span></div>` : ''}
+                    ${contact.phone ? `<div class="detail-row"><span class="detail-label">📱 手机:</span><span class="detail-value"><a href="https://wa.me/${contact.phone.replace(/[^0-9]/g, '')}" target="_blank" style="color: #25D366;">${contact.phone}</a></span></div>` : ''}
                     ${contact.website ? `<div class="detail-row"><span class="detail-label">🌐 官网:</span><span class="detail-value"><a href="${contact.website}" target="_blank">${contact.website}</a></span></div>` : ''}
                     ${contact.linkedin ? `<div class="detail-row"><span class="detail-label">💼 LinkedIn:</span><span class="detail-value"><a href="${contact.linkedin}" target="_blank">查看个人资料</a></span></div>` : ''}
                 </div>
