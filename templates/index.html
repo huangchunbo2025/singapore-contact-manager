@@ -665,7 +665,10 @@
                 <!-- Subject/Title -->
                 <div style="margin-bottom: 15px;">
                     <label style="font-weight: 600; color: #333; display: block; margin-bottom: 5px;">Subject / Title:</label>
-                    <input type="text" id="linkedinSubject" style="width: 100%; padding: 12px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 14px; border: 1px solid #ddd; border-radius: 8px;" readonly />
+                    <div style="display: flex; gap: 10px;">
+                        <input type="text" id="linkedinSubject" style="flex: 1; padding: 12px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 14px; border: 1px solid #ddd; border-radius: 8px;" readonly />
+                        <button onclick="copyLinkedInSubject()" style="background: #667eea; color: white; border: none; padding: 12px 16px; border-radius: 8px; cursor: pointer; font-weight: 600; white-space: nowrap;">📋 Copy</button>
+                    </div>
                     <div id="subjectLengthInfo" style="margin-top: 5px; font-size: 12px; display: flex; justify-content: space-between; align-items: center;">
                         <span id="subjectLength">0 / 200 characters</span>
                         <span id="subjectWarning" style="color: #ff5252; display: none;">⚠️ Subject exceeds limit!</span>
@@ -674,7 +677,10 @@
 
                 <!-- Message Body -->
                 <div>
-                    <label style="font-weight: 600; color: #333; display: block; margin-bottom: 5px;">Message:</label>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+                        <label style="font-weight: 600; color: #333;">Message:</label>
+                        <button onclick="copyLinkedInMessage()" style="background: #0077b5; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 13px;">📋 Copy Message</button>
+                    </div>
                     <textarea id="linkedinMessage" style="width: 100%; height: 350px; padding: 15px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 14px; line-height: 1.6; border: 1px solid #ddd; border-radius: 8px; resize: vertical;"></textarea>
                     <div id="messageLengthInfo" style="margin-top: 5px; font-size: 12px; display: flex; justify-content: space-between; align-items: center;">
                         <span id="messageLength">0 / 1900 characters</span>
@@ -688,8 +694,6 @@
             </div>
             <div class="modal-actions">
                 <button class="modal-btn modal-btn-cancel" onclick="closeLinkedInModal()">Close</button>
-                <button class="modal-btn" onclick="copyLinkedInSubject()" style="background: #667eea; color: white;">📋 Copy Subject</button>
-                <button class="modal-btn modal-btn-confirm" onclick="copyLinkedInMessage()" style="background: #0077b5;">📋 Copy Message</button>
             </div>
         </div>
     </div>
