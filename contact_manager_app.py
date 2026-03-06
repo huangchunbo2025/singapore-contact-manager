@@ -325,10 +325,26 @@ def export_to_csv(filename):
     return filepath
 
 # 路由
-# 全局错误处理
+# 404 错误处理
+@app.errorhandler(404)
+def handle_not_found(error):
+    if request.path.startswith('/api/'):
+        return jsonify({'success': False, 'message': 'Not found'}), 404
+    return '', 404
+
+# 处理 favicon 请求
+@app.route('/favicon.ico')
+def favicon():
+    return '', 204
+
+# 全局错误处理（500等服务器错误）
 @app.errorhandler(Exception)
 def handle_error(error):
-    print(f"❌ 全局错误：{error}")
+    # 跳过 HTTP 异常（如404），让专门的处理器处理
+    from werkzeug.exceptions import HTTPException
+    if isinstance(error, HTTPException):
+        raise error
+    print(f"❌ 服务器错误：{error}")
     if request.path.startswith('/api/'):
         # API 请求返回 JSON
         return jsonify({'success': False, 'message': str(error), 'data': []}), 500
