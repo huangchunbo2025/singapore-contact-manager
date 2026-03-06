@@ -675,13 +675,26 @@
                     </div>
                 </div>
 
-                <!-- Message Body -->
+                <!-- Short Message (Connection Request) -->
+                <div style="margin-bottom: 15px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+                        <label style="font-weight: 600; color: #333;">Short Version (Connection Request):</label>
+                        <button onclick="copyShortMessage()" style="background: #00a550; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 13px;">📋 Copy Short</button>
+                    </div>
+                    <textarea id="linkedinShortMessage" style="width: 100%; height: 100px; padding: 12px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 14px; line-height: 1.5; border: 1px solid #ddd; border-radius: 8px; resize: vertical;"></textarea>
+                    <div style="margin-top: 5px; font-size: 12px; display: flex; justify-content: space-between; align-items: center;">
+                        <span id="shortMessageLength">0 / 300 characters</span>
+                        <span id="shortMessageWarning" style="color: #ff5252; display: none;">⚠️ Exceeds connection request limit!</span>
+                    </div>
+                </div>
+
+                <!-- Full Message (InMail) -->
                 <div>
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
-                        <label style="font-weight: 600; color: #333;">Message:</label>
-                        <button onclick="copyLinkedInMessage()" style="background: #0077b5; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 13px;">📋 Copy Message</button>
+                        <label style="font-weight: 600; color: #333;">Full Message (InMail):</label>
+                        <button onclick="copyLinkedInMessage()" style="background: #0077b5; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 13px;">📋 Copy Full</button>
                     </div>
-                    <textarea id="linkedinMessage" style="width: 100%; height: 350px; padding: 15px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 14px; line-height: 1.6; border: 1px solid #ddd; border-radius: 8px; resize: vertical;"></textarea>
+                    <textarea id="linkedinMessage" style="width: 100%; height: 300px; padding: 15px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 14px; line-height: 1.6; border: 1px solid #ddd; border-radius: 8px; resize: vertical;"></textarea>
                     <div id="messageLengthInfo" style="margin-top: 5px; font-size: 12px; display: flex; justify-content: space-between; align-items: center;">
                         <span id="messageLength">0 / 1900 characters</span>
                         <span id="messageWarning" style="color: #ff5252; display: none;">⚠️ Message exceeds InMail limit!</span>
@@ -689,8 +702,7 @@
                 </div>
 
                 <div style="margin-top: 15px; padding: 10px; background: #e3f2fd; border-radius: 8px; font-size: 12px; color: #1976d2;">
-                    💡 Tip: Copy and send directly to the contact on LinkedIn. InMail limit: Subject 200 chars, Body 1900 chars.
-                </div>
+                    💡 Short version for connection requests (300 chars). Full version for InMail (1900 chars).
             </div>
             <div class="modal-actions">
                 <button class="modal-btn modal-btn-cancel" onclick="closeLinkedInModal()">Close</button>
@@ -1113,6 +1125,7 @@
             const contact = data.contact;
             const subject = data.subject;
             const message = data.message;
+            const shortMessage = data.short_message;
             const lengthInfo = data.length_info;
 
             document.getElementById('linkedinContactInfo').innerHTML = `
@@ -1124,7 +1137,10 @@
             // Set subject
             document.getElementById('linkedinSubject').value = subject;
 
-            // Set message
+            // Set short message
+            document.getElementById('linkedinShortMessage').value = shortMessage;
+
+            // Set full message
             document.getElementById('linkedinMessage').value = message;
 
             // Update subject length info
@@ -1134,7 +1150,14 @@
             subjectLengthEl.style.color = lengthInfo.subject_warning ? '#ff5252' : '#666';
             subjectWarningEl.style.display = lengthInfo.subject_warning ? 'inline' : 'none';
 
-            // Update message length info
+            // Update short message length info
+            const shortMessageLengthEl = document.getElementById('shortMessageLength');
+            const shortMessageWarningEl = document.getElementById('shortMessageWarning');
+            shortMessageLengthEl.textContent = `${lengthInfo.short_message_length} / ${lengthInfo.short_message_limit} characters`;
+            shortMessageLengthEl.style.color = lengthInfo.short_message_warning ? '#ff5252' : '#666';
+            shortMessageWarningEl.style.display = lengthInfo.short_message_warning ? 'inline' : 'none';
+
+            // Update full message length info
             const messageLengthEl = document.getElementById('messageLength');
             const messageWarningEl = document.getElementById('messageWarning');
             messageLengthEl.textContent = `${lengthInfo.message_length} / ${lengthInfo.message_limit} characters`;
@@ -1169,13 +1192,28 @@
             const messageText = document.getElementById('linkedinMessage').value;
             try {
                 await navigator.clipboard.writeText(messageText);
-                showToast('Message copied to clipboard!');
+                showToast('Full message copied!');
             } catch (error) {
                 // 备用方案
                 const textarea = document.getElementById('linkedinMessage');
                 textarea.select();
                 document.execCommand('copy');
-                showToast('Message copied to clipboard!');
+                showToast('Full message copied!');
+            }
+        }
+
+        // 复制短消息到剪贴板
+        async function copyShortMessage() {
+            const shortText = document.getElementById('linkedinShortMessage').value;
+            try {
+                await navigator.clipboard.writeText(shortText);
+                showToast('Short message copied!');
+            } catch (error) {
+                // 备用方案
+                const textarea = document.getElementById('linkedinShortMessage');
+                textarea.select();
+                document.execCommand('copy');
+                showToast('Short message copied!');
             }
         }
 
