@@ -506,7 +506,9 @@ Register here: {event_link}
 Looking forward to hearing from you!
 
 Best regards,
-Chunbo"""
+Chunbo Huang
+Founder & CEO, Socialhub.AI
++1 425-922-5280"""
 
     return {'subject': subject, 'message': message}
 
