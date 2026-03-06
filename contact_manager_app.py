@@ -436,60 +436,6 @@ def export_data():
     else:
         return jsonify({'success': False, 'message': '导出失败'})
 
-@app.route('/api/generate_linkedin_message/<email>')
-def generate_linkedin_message(email):
-    """生成个性化LinkedIn邀请消息"""
-    try:
-        conn = sqlite3.connect(app.config['DATABASE'])
-        conn.row_factory = sqlite3.Row
-        cursor = conn.cursor()
-
-        cursor.execute('SELECT * FROM contacts WHERE email = ? AND is_deleted = 0', (email,))
-        contact = cursor.fetchone()
-        conn.close()
-
-        if not contact:
-            return jsonify({'success': False, 'message': '未找到该联系人'})
-
-        contact_dict = dict(contact)
-        result = _generate_message_content(contact_dict)
-        subject = result['subject']
-        message = result['message']
-
-        # LinkedIn InMail limits: Subject ~200 chars, Body ~1900 chars
-        # Connection request: ~300 chars
-        subject_limit = 200
-        message_limit = 1900
-
-        subject_length = len(subject)
-        message_length = len(message)
-
-        subject_warning = subject_length > subject_limit
-        message_warning = message_length > message_limit
-
-        return jsonify({
-            'success': True,
-            'subject': subject,
-            'message': message,
-            'length_info': {
-                'subject_length': subject_length,
-                'subject_limit': subject_limit,
-                'subject_warning': subject_warning,
-                'message_length': message_length,
-                'message_limit': message_limit,
-                'message_warning': message_warning
-            },
-            'contact': {
-                'name': contact_dict.get('name'),
-                'title': contact_dict.get('title'),
-                'company': contact_dict.get('company'),
-                'linkedin': contact_dict.get('linkedin')
-            }
-        })
-
-    except Exception as e:
-        return jsonify({'success': False, 'message': str(e)})
-
 def _generate_message_content(contact):
     """生成个性化LinkedIn邀请消息，返回标题和消息内容"""
     name = contact.get('name', '').split()[0] if contact.get('name') else 'there'
@@ -555,6 +501,60 @@ Best regards,
 Chunbo"""
 
     return {'subject': subject, 'message': message}
+
+@app.route('/api/generate_linkedin_message/<email>')
+def generate_linkedin_message(email):
+    """生成个性化LinkedIn邀请消息"""
+    try:
+        conn = sqlite3.connect(app.config['DATABASE'])
+        conn.row_factory = sqlite3.Row
+        cursor = conn.cursor()
+
+        cursor.execute('SELECT * FROM contacts WHERE email = ? AND is_deleted = 0', (email,))
+        contact = cursor.fetchone()
+        conn.close()
+
+        if not contact:
+            return jsonify({'success': False, 'message': '未找到该联系人'})
+
+        contact_dict = dict(contact)
+        result = _generate_message_content(contact_dict)
+        subject = result['subject']
+        message = result['message']
+
+        # LinkedIn InMail limits: Subject ~200 chars, Body ~1900 chars
+        # Connection request: ~300 chars
+        subject_limit = 200
+        message_limit = 1900
+
+        subject_length = len(subject)
+        message_length = len(message)
+
+        subject_warning = subject_length > subject_limit
+        message_warning = message_length > message_limit
+
+        return jsonify({
+            'success': True,
+            'subject': subject,
+            'message': message,
+            'length_info': {
+                'subject_length': subject_length,
+                'subject_limit': subject_limit,
+                'subject_warning': subject_warning,
+                'message_length': message_length,
+                'message_limit': message_limit,
+                'message_warning': message_warning
+            },
+            'contact': {
+                'name': contact_dict.get('name'),
+                'title': contact_dict.get('title'),
+                'company': contact_dict.get('company'),
+                'linkedin': contact_dict.get('linkedin')
+            }
+        })
+
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)})
 
 # 在应用加载时初始化数据库（Gunicorn启动时也会执行）
 try:
