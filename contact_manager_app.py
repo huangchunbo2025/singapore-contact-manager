@@ -442,8 +442,7 @@ def _generate_message_content(contact):
     title = contact.get('title', '')
     company = contact.get('company', '')
     industry = contact.get('industry', '')
-    background = contact.get('background', '')
-    approach = contact.get('approach', '')
+    employees = contact.get('employees', '')
 
     # 生成吸引人的标题
     if industry:
@@ -461,15 +460,8 @@ def _generate_message_content(contact):
     else:
         greeting = f"Hello {name}"
 
-    # 基于背景的个性化原因
-    if background:
-        personalized_reason = f"Given your background - {background[:200]}{'...' if len(background) > 200 else ''} - I believe your perspective would be invaluable to this discussion."
-    elif approach:
-        personalized_reason = f"I'm reaching out because {approach}"
-    elif industry:
-        personalized_reason = f"As a leader in the {industry} industry, your insights on AI implementation would greatly enrich our discussion."
-    else:
-        personalized_reason = f"Given your role as {title} at {company}, I believe your perspective would add tremendous value to this conversation."
+    # 基于职位和公司生成专业的个性化理由
+    personalized_reason = _build_personalized_reason(title, company, industry, employees)
 
     # 活动报名链接
     event_link = "https://www.linkedin.com/events/7435129035216678912?viewAsMember=true"
@@ -501,6 +493,62 @@ Best regards,
 Chunbo"""
 
     return {'subject': subject, 'message': message}
+
+def _build_personalized_reason(title, company, industry, employees):
+    """根据职位、公司、行业生成专业的个性化邀请理由"""
+    title_upper = title.upper() if title else ''
+
+    # 判断公司规模
+    try:
+        emp_count = int(str(employees).replace(',', '').replace('+', ''))
+        is_large_enterprise = emp_count > 5000
+    except:
+        is_large_enterprise = False
+
+    # 根据职位类型定制
+    if any(term in title_upper for term in ['CEO', 'CHIEF EXECUTIVE', 'PRESIDENT', 'FOUNDER']):
+        role_context = f"As a visionary leader at {company}"
+    elif any(term in title_upper for term in ['CTO', 'CIO', 'CHIEF TECHNOLOGY', 'CHIEF INFORMATION', 'CHIEF DIGITAL']):
+        role_context = f"Given your role driving technology strategy at {company}"
+    elif any(term in title_upper for term in ['CMO', 'CHIEF MARKETING', 'CHIEF GROWTH']):
+        role_context = f"With your expertise in driving growth and customer engagement at {company}"
+    elif any(term in title_upper for term in ['VP', 'VICE PRESIDENT']):
+        role_context = f"As a senior leader at {company}"
+    elif any(term in title_upper for term in ['DIRECTOR', 'HEAD']):
+        role_context = f"Given your leadership role at {company}"
+    elif any(term in title_upper for term in ['MANAGER', 'LEAD']):
+        role_context = f"With your hands-on experience at {company}"
+    else:
+        role_context = f"Given your role at {company}"
+
+    # 根据行业定制
+    industry_lower = industry.lower() if industry else ''
+    if any(term in industry_lower for term in ['retail', 'e-commerce', 'ecommerce', 'consumer']):
+        industry_context = "your insights on retail transformation and customer experience"
+    elif any(term in industry_lower for term in ['hospitality', 'hotel', 'travel', 'tourism']):
+        industry_context = "your perspective on hospitality innovation and guest experience"
+    elif any(term in industry_lower for term in ['finance', 'banking', 'insurance', 'fintech']):
+        industry_context = "your experience in financial services digital transformation"
+    elif any(term in industry_lower for term in ['technology', 'software', 'internet', 'tech']):
+        industry_context = "your deep understanding of technology adoption at scale"
+    elif any(term in industry_lower for term in ['manufacturing', 'industrial']):
+        industry_context = "your insights on industrial AI and operational excellence"
+    elif any(term in industry_lower for term in ['healthcare', 'medical', 'pharma']):
+        industry_context = "your perspective on healthcare innovation"
+    elif any(term in industry_lower for term in ['media', 'entertainment', 'gaming']):
+        industry_context = "your insights on content and audience engagement"
+    elif any(term in industry_lower for term in ['food', 'beverage', 'restaurant', 'f&b']):
+        industry_context = "your experience in F&B digital transformation"
+    else:
+        industry_context = "your valuable industry perspective"
+
+    # 组合成完整的个性化理由
+    if is_large_enterprise:
+        scale_note = "would be particularly valuable as we discuss scaling AI from pilot to enterprise infrastructure"
+    else:
+        scale_note = "would greatly enrich our discussion on practical AI implementation"
+
+    return f"{role_context}, {industry_context} {scale_note}."
 
 @app.route('/api/generate_linkedin_message/<email>')
 def generate_linkedin_message(email):
