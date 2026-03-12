@@ -370,6 +370,20 @@
             color: white;
         }
 
+        .status-responded {
+            background: #ff9800;
+            color: white;
+        }
+
+        .response-badge {
+            background: #fff3e0;
+            color: #ef6c00;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
         .status-btn:hover {
             opacity: 0.8;
             transform: scale(1.05);
@@ -615,6 +629,7 @@
             <div class="stats">
                 <div class="stat-item">总联系人: <span id="totalCount">0</span></div>
                 <div class="stat-item">已联系: <span id="contactedCount">0</span></div>
+                <div class="stat-item">有响应: <span id="respondedCount">0</span></div>
                 <div class="stat-item">未联系: <span id="notContactedCount">0</span></div>
             </div>
         </div>
@@ -839,6 +854,7 @@
                                  (contact.priority || '').includes('B') ? 'priority-B' : 'priority-C';
 
             const employees = formatNumber(contact.employees || '0');
+            const hasResponseBadge = contact.responded ? '<span class="response-badge">有响应</span>' : '';
 
             // 分割技术栈
             const msProducts = (contact.ms_products || '').split('、').filter(p => p);
@@ -853,6 +869,7 @@
                     <div class="contact-name">
                         ${contact.name || 'N/A'}
                         <span class="priority-badge ${priorityClass}">${contact.priority || ''}</span>
+                        ${hasResponseBadge}
                     </div>
                     <div class="contact-title">${contact.title || ''}</div>
                     <div class="contact-company">
@@ -957,6 +974,17 @@
                         <button class="status-btn ${contact.phone_contacted ? 'status-contacted' : 'status-not-contacted'}"
                                 onclick="toggleStatus('${contact.email}', 'phone_contacted', ${!contact.phone_contacted})">
                             ${contact.phone_contacted ? '✓ 已联系' : '未联系'}
+                        </button>
+                    </div>
+
+                    <div class="method-item">
+                        <span class="method-label">
+                            <svg class="method-icon" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2a10 10 0 1 0 10 10A10.011 10.011 0 0 0 12 2Zm-1.2 14.6-4-4 1.4-1.4 2.6 2.6 5.2-5.2 1.4 1.4Z"/></svg>
+                            响应状态
+                        </span>
+                        <button class="status-btn ${contact.responded ? 'status-responded' : 'status-not-contacted'}"
+                                onclick="toggleStatus('${contact.email}', 'responded', ${!contact.responded})">
+                            ${contact.responded ? '已响应' : '未响应'}
                         </button>
                     </div>
                 </div>
@@ -1288,16 +1316,21 @@
         // 更新统计
         function updateStats() {
             let contacted = 0;
+            let responded = 0;
 
             filteredData.forEach(contact => {
                 if (contact.linkedin_contacted || contact.whatsapp_contacted ||
                     contact.email_contacted || contact.phone_contacted) {
                     contacted++;
                 }
+                if (contact.responded) {
+                    responded++;
+                }
             });
 
             document.getElementById('totalCount').textContent = filteredData.length;
             document.getElementById('contactedCount').textContent = contacted;
+            document.getElementById('respondedCount').textContent = responded;
             document.getElementById('notContactedCount').textContent = filteredData.length - contacted;
         }
 

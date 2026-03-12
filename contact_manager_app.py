@@ -83,11 +83,18 @@ def init_db():
             whatsapp_contacted INTEGER DEFAULT 0,
             email_contacted INTEGER DEFAULT 0,
             phone_contacted INTEGER DEFAULT 0,
+            responded INTEGER DEFAULT 0,
             notes TEXT,
             last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (email) REFERENCES contacts(email)
         )
     ''')
+
+    cursor.execute("PRAGMA table_info(contact_status)")
+    status_columns = [column[1] for column in cursor.fetchall()]
+    if 'responded' not in status_columns:
+        cursor.execute('ALTER TABLE contact_status ADD COLUMN responded INTEGER DEFAULT 0')
+        print("Added responded column to contact_status")
 
     conn.commit()
 
@@ -211,6 +218,7 @@ def get_all_contacts():
                    COALESCE(s.whatsapp_contacted, 0) as whatsapp_contacted,
                    COALESCE(s.email_contacted, 0) as email_contacted,
                    COALESCE(s.phone_contacted, 0) as phone_contacted,
+                   COALESCE(s.responded, 0) as responded,
                    COALESCE(s.notes, '') as notes,
                    s.last_updated
             FROM contacts c
@@ -236,7 +244,7 @@ def update_contact_status(email, field, value):
     cursor.execute('INSERT OR IGNORE INTO contact_status (email) VALUES (?)', (email,))
 
     # 更新字段
-    if field in ['linkedin_contacted', 'whatsapp_contacted', 'email_contacted', 'phone_contacted']:
+    if field in ['linkedin_contacted', 'whatsapp_contacted', 'email_contacted', 'phone_contacted', 'responded']:
         cursor.execute(f'''
             UPDATE contact_status
             SET {field} = ?, last_updated = CURRENT_TIMESTAMP
@@ -297,6 +305,7 @@ def get_deleted_contacts():
                COALESCE(s.whatsapp_contacted, 0) as whatsapp_contacted,
                COALESCE(s.email_contacted, 0) as email_contacted,
                COALESCE(s.phone_contacted, 0) as phone_contacted,
+               COALESCE(s.responded, 0) as responded,
                COALESCE(s.notes, '') as notes,
                s.last_updated
         FROM contacts c
@@ -323,7 +332,7 @@ def export_to_csv(filename):
             '姓名', '职位', '公司', '邮箱', 'Website', 'LinkedIn',
             'Industry', 'Employees', '优先级', '背景说明', '邀约切入点',
             '微软产品', '营销技术栈产品', '全球性企业标记', '全球化判定依据',
-            'LinkedIn联系状态', 'WhatsApp联系状态', 'Email联系状态', '电话联系状态',
+            'LinkedIn联系状态', 'WhatsApp联系状态', 'Email联系状态', '电话联系状态', '有响应',
             '备注', '最后更新时间'
         ]
 
@@ -351,6 +360,7 @@ def export_to_csv(filename):
                 'WhatsApp联系状态': '已联系' if contact['whatsapp_contacted'] else '未联系',
                 'Email联系状态': '已联系' if contact['email_contacted'] else '未联系',
                 '电话联系状态': '已联系' if contact['phone_contacted'] else '未联系',
+                '有响应': '已响应' if contact['responded'] else '未响应',
                 '备注': contact['notes'],
                 '最后更新时间': contact['last_updated'] or ''
             })
