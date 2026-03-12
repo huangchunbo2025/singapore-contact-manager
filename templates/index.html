@@ -674,6 +674,7 @@
 
                 <button class="btn" id="sortBtn" onclick="sortBySize()">📊 按公司规模排序</button>
                 <button class="btn" id="exportBtn" onclick="exportData()">💾 导出联系记录</button>
+                <button class="btn" id="exportRespondedBtn" onclick="exportRespondedData()">📥 导出有响应名单</button>
                 <button class="btn" onclick="loadContacts()">🔄 刷新数据</button>
                 <button class="btn btn-secondary" id="viewToggleBtn" onclick="toggleCompactView()">🔍 紧凑视图</button>
                 <button class="btn btn-trash" onclick="showDeletedContacts()">🗑️ 回收站</button>
@@ -1464,6 +1465,10 @@
         // 导出数据
         function exportData() {
             window.location.href = '/api/export';
+        }
+
+        function exportRespondedData() {
+            window.location.href = '/api/export_responded';
         }
 
         // 点击弹窗外部关闭

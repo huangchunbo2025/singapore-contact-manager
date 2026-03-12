@@ -386,6 +386,30 @@ def export_to_csv(filename):
 
     return filepath
 
+def export_responded_contacts_csv(filename):
+    contacts = [contact for contact in get_all_contacts() if contact.get('responded')]
+
+    if not contacts:
+        return None
+
+    filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+
+    with open(filepath, 'w', encoding='utf-8-sig', newline='') as f:
+        fieldnames = ['姓名', '岗位', '公司', 'LinkedIn', '邮箱']
+        writer = csv.DictWriter(f, fieldnames=fieldnames)
+        writer.writeheader()
+
+        for contact in contacts:
+            writer.writerow({
+                '姓名': contact.get('name', ''),
+                '岗位': contact.get('title', ''),
+                '公司': contact.get('company', ''),
+                'LinkedIn': contact.get('linkedin', ''),
+                '邮箱': contact.get('email', '')
+            })
+
+    return filepath
+
 # 路由
 # 处理 favicon 请求（避免404日志）
 @app.route('/favicon.ico')
@@ -491,6 +515,16 @@ def export_data():
         return send_file(filepath, as_attachment=True, download_name=filename)
     else:
         return jsonify({'success': False, 'message': '导出失败'})
+
+@app.route('/api/export_responded')
+def export_responded_data():
+    filename = f'responded_contacts_{datetime.now().strftime("%Y%m%d_%H%M%S")}.csv'
+    filepath = export_responded_contacts_csv(filename)
+
+    if filepath and os.path.exists(filepath):
+        return send_file(filepath, as_attachment=True, download_name=filename)
+    else:
+        return jsonify({'success': False, 'message': '没有有响应联系人可导出'})
 
 def _generate_message_content(contact):
     """生成个性化LinkedIn邀请消息，返回标题和消息内容"""
