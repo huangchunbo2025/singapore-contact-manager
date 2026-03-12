@@ -13,6 +13,8 @@ from werkzeug.utils import secure_filename
 
 app = Flask(__name__)
 
+"""
+
 # 检测是否在生产环境（Render/Heroku 等会设置 PORT 环境变量）
 IS_PRODUCTION = os.environ.get('PORT') is not None
 
@@ -31,6 +33,23 @@ else:
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
 # 数据库初始化
+"""
+
+# Detect production mode when PORT is provided by the hosting platform.
+IS_PRODUCTION = os.environ.get('PORT') is not None
+
+if IS_PRODUCTION:
+    app.config['UPLOAD_FOLDER'] = '/data/uploads'
+    app.config['DATABASE'] = '/data/contacts.db'
+    print("Production mode: using /data/contacts.db")
+else:
+    app.config['UPLOAD_FOLDER'] = 'uploads'
+    app.config['DATABASE'] = 'contacts.db'
+    print("Development mode: using contacts.db")
+
+# Ensure the upload directory exists.
+os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+
 def init_db():
     try:
         print(f"📊 初始化数据库：{app.config['DATABASE']}")
