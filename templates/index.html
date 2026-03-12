@@ -108,6 +108,14 @@
             background: #757575;
         }
 
+        .btn-secondary {
+            background: #455a64;
+        }
+
+        .btn-secondary:hover {
+            background: #37474f;
+        }
+
         .stats {
             display: flex;
             gap: 20px;
@@ -238,6 +246,39 @@
 
         .contact-details {
             margin: 15px 0;
+        }
+
+        .contact-card.compact {
+            padding: 20px 22px;
+        }
+
+        .contact-card.compact .contact-header {
+            margin-bottom: 10px;
+            padding-bottom: 12px;
+        }
+
+        .contact-card.compact .contact-name {
+            font-size: 20px;
+        }
+
+        .contact-card.compact .contact-title {
+            margin-bottom: 2px;
+        }
+
+        .contact-card.compact .contact-company {
+            gap: 8px;
+        }
+
+        .contact-card.compact .company-size,
+        .contact-card.compact .industry-badge,
+        .contact-card.compact .priority-badge,
+        .contact-card.compact .response-badge {
+            transform: scale(0.95);
+            transform-origin: left center;
+        }
+
+        .contact-card.compact .detail-row {
+            margin: 6px 0;
         }
 
         .detail-row {
@@ -621,6 +662,7 @@
                 <button class="btn" id="sortBtn" onclick="sortBySize()">📊 按公司规模排序</button>
                 <button class="btn" id="exportBtn" onclick="exportData()">💾 导出联系记录</button>
                 <button class="btn" onclick="loadContacts()">🔄 刷新数据</button>
+                <button class="btn btn-secondary" id="viewToggleBtn" onclick="toggleCompactView()">🔍 紧凑视图</button>
                 <button class="btn btn-trash" onclick="showDeletedContacts()">🗑️ 回收站</button>
 
                 <input type="text" class="filter-search" id="searchInput" placeholder="🔍 搜索姓名、公司、职位、行业...">
@@ -729,6 +771,7 @@
         let contactsData = [];
         let filteredData = [];
         let deleteTarget = null;
+        let compactView = false;
 
         // 显示提示消息
         function showToast(message, type = 'success') {
@@ -839,10 +882,42 @@
 
             filteredData.forEach((contact, index) => {
                 const card = createContactCard(contact, index);
+                if (compactView) {
+                    applyCompactCardLayout(card);
+                }
                 container.appendChild(card);
             });
 
             updateStats();
+        }
+
+        function toggleCompactView() {
+            compactView = !compactView;
+            const btn = document.getElementById('viewToggleBtn');
+            btn.textContent = compactView ? '🔎 完整视图' : '🔍 紧凑视图';
+            renderContacts();
+        }
+
+        function applyCompactCardLayout(card) {
+            card.classList.add('compact');
+
+            card.querySelectorAll('.info-section, .contact-methods, .notes-section, .delete-btn').forEach((el) => {
+                el.remove();
+            });
+
+            card.querySelectorAll('.priority-badge, .response-badge, .company-size, .industry-badge').forEach((el) => {
+                el.remove();
+            });
+
+            const detailRows = card.querySelectorAll('.contact-details .detail-row');
+            detailRows.forEach((row) => {
+                const label = row.querySelector('.detail-label');
+                const text = label ? label.textContent : '';
+                const keep = text.includes('邮箱') || text.includes('官网') || text.includes('LinkedIn');
+                if (!keep) {
+                    row.remove();
+                }
+            });
         }
 
         // 创建联系人卡片
