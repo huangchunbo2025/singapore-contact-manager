@@ -128,11 +128,24 @@
             padding: 10px 20px;
             border-radius: 8px;
             font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: 2px solid transparent;
         }
 
         .stat-item span {
             color: #667eea;
             font-size: 18px;
+        }
+
+        .stat-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        }
+
+        .stat-item.active {
+            border-color: #667eea;
+            background: #eef2ff;
         }
 
         .filter-search {
@@ -669,10 +682,10 @@
             </div>
 
             <div class="stats">
-                <div class="stat-item">总联系人: <span id="totalCount">0</span></div>
-                <div class="stat-item">已联系: <span id="contactedCount">0</span></div>
-                <div class="stat-item">有响应: <span id="respondedCount">0</span></div>
-                <div class="stat-item">未联系: <span id="notContactedCount">0</span></div>
+                <div class="stat-item active" id="filter-all" onclick="setStatusFilter('all')">总联系人: <span id="totalCount">0</span></div>
+                <div class="stat-item" id="filter-contacted" onclick="setStatusFilter('contacted')">已联系: <span id="contactedCount">0</span></div>
+                <div class="stat-item" id="filter-responded" onclick="setStatusFilter('responded')">有响应: <span id="respondedCount">0</span></div>
+                <div class="stat-item" id="filter-not-contacted" onclick="setStatusFilter('not_contacted')">未联系: <span id="notContactedCount">0</span></div>
             </div>
         </div>
 
@@ -772,6 +785,7 @@
         let filteredData = [];
         let deleteTarget = null;
         let compactView = false;
+        let currentStatusFilter = 'all';
 
         // 显示提示消息
         function showToast(message, type = 'success') {
@@ -799,8 +813,7 @@
 
                 if (result.success) {
                     contactsData = result.data;
-                    filteredData = [...contactsData];
-                    renderContacts();
+                    applyFilters();
 
                     // 如果数据为空，提示用户导入
                     if (contactsData.length === 0) {
@@ -858,15 +871,54 @@
 
         // 搜索过滤
         document.getElementById('searchInput').addEventListener('input', function(e) {
-            const searchTerm = e.target.value.toLowerCase();
-            filteredData = contactsData.filter(contact => {
-                return (contact.name || '').toLowerCase().includes(searchTerm) ||
-                       (contact.company || '').toLowerCase().includes(searchTerm) ||
-                       (contact.title || '').toLowerCase().includes(searchTerm) ||
-                       (contact.industry || '').toLowerCase().includes(searchTerm);
-            });
-            renderContacts();
+            applyFilters();
         });
+
+        function setStatusFilter(filter) {
+            currentStatusFilter = filter;
+            updateFilterButtons();
+            applyFilters();
+        }
+
+        function updateFilterButtons() {
+            document.querySelectorAll('.stats .stat-item').forEach((el) => el.classList.remove('active'));
+            const active = document.getElementById(`filter-${currentStatusFilter.replace('_', '-')}`);
+            if (active) {
+                active.classList.add('active');
+            }
+        }
+
+        function applyFilters() {
+            const searchTerm = (document.getElementById('searchInput').value || '').toLowerCase();
+
+            filteredData = contactsData.filter(contact => {
+                const matchesSearch =
+                    (contact.name || '').toLowerCase().includes(searchTerm) ||
+                    (contact.company || '').toLowerCase().includes(searchTerm) ||
+                    (contact.title || '').toLowerCase().includes(searchTerm) ||
+                    (contact.industry || '').toLowerCase().includes(searchTerm);
+
+                if (!matchesSearch) {
+                    return false;
+                }
+
+                const isContacted = contact.linkedin_contacted || contact.whatsapp_contacted ||
+                    contact.email_contacted || contact.phone_contacted;
+
+                if (currentStatusFilter === 'contacted') {
+                    return !!isContacted;
+                }
+                if (currentStatusFilter === 'responded') {
+                    return !!contact.responded;
+                }
+                if (currentStatusFilter === 'not_contacted') {
+                    return !isContacted;
+                }
+                return true;
+            });
+
+            renderContacts();
+        }
 
         // 渲染联系人列表
         function renderContacts() {
@@ -1393,7 +1445,7 @@
             let contacted = 0;
             let responded = 0;
 
-            filteredData.forEach(contact => {
+            contactsData.forEach(contact => {
                 if (contact.linkedin_contacted || contact.whatsapp_contacted ||
                     contact.email_contacted || contact.phone_contacted) {
                     contacted++;
@@ -1403,10 +1455,10 @@
                 }
             });
 
-            document.getElementById('totalCount').textContent = filteredData.length;
+            document.getElementById('totalCount').textContent = contactsData.length;
             document.getElementById('contactedCount').textContent = contacted;
             document.getElementById('respondedCount').textContent = responded;
-            document.getElementById('notContactedCount').textContent = filteredData.length - contacted;
+            document.getElementById('notContactedCount').textContent = contactsData.length - contacted;
         }
 
         // 导出数据
