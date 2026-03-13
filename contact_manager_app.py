@@ -579,14 +579,31 @@ def _generate_message_content(contact):
     company = contact.get('company', '')
     industry = contact.get('industry', '')
     employees = contact.get('employees', '')
+    city = (contact.get('city') or '').strip()
+
+    event_config = {
+        'Hong Kong': {
+            'location_name': 'Hong Kong',
+            'stop_label': '4th Stop: Hong Kong',
+            'date_line': 'Wednesday, April 15th, 2026 (Afternoon session)',
+            'venue_line': 'Microsoft Office, Hong Kong'
+        },
+        'Singapore': {
+            'location_name': 'Singapore',
+            'stop_label': '3rd Stop: Singapore',
+            'date_line': 'Wednesday, March 18th, 2026 (Morning session)',
+            'venue_line': 'Microsoft Office, Singapore'
+        }
+    }
+    event = event_config.get(city, event_config['Hong Kong'])
 
     # 生成吸引人的标题
     if industry:
-        subject = f"Exclusive Invite: AI Roundtable for {industry} Leaders at Microsoft Singapore"
+        subject = f"Exclusive Invite: AI Roundtable for {industry} Leaders at Microsoft {event['location_name']}"
     elif company:
-        subject = f"Exclusive Invite: AI Executive Roundtable at Microsoft Singapore"
+        subject = f"Exclusive Invite: AI Executive Roundtable at Microsoft {event['location_name']}"
     else:
-        subject = "Exclusive Invite: AI Roundtable at Microsoft Singapore - 12 Seats Only"
+        subject = f"Exclusive Invite: AI Roundtable at Microsoft {event['location_name']} - 12 Seats Only"
 
     # 根据职位确定称呼
     if any(term in title.upper() for term in ['CEO', 'CHIEF', 'PRESIDENT', 'FOUNDER', 'MANAGING DIRECTOR']):
@@ -607,14 +624,14 @@ def _generate_message_content(contact):
 
 I'm Chunbo from Socialhub.AI, and I'm excited to invite you to an exclusive event we're co-hosting with Microsoft.
 
-**Socialhub.AI Global Tour - 3rd Stop: Singapore**
+**Socialhub.AI Global Tour - {event['stop_label']}**
 **Topic: Retail AI - From Pilot to Infrastructure**
 
 This is an intimate executive roundtable limited to just 12 seats, designed for senior leaders who are navigating the journey from AI experimentation to enterprise-scale implementation.
 
 **Event Details:**
-- Date: Wednesday, March 18th, 2026 (Morning session)
-- Venue: Microsoft Office, Singapore
+- Date: {event['date_line']}
+- Venue: {event['venue_line']}
 - Format: Closed-door roundtable discussion
 
 {personalized_reason}
@@ -631,7 +648,7 @@ Founder & CEO, Socialhub.AI
 +1 425-922-5280"""
 
     # 300字符浓缩版本（用于LinkedIn连接请求）
-    short_message = f"""{greeting}, I'm Chunbo from Socialhub.AI. We're co-hosting an exclusive AI Roundtable with Microsoft Singapore on March 18th - only 12 seats. Topic: Retail AI - From Pilot to Infrastructure. Would love to have you join us! Details: {event_link}"""
+    short_message = f"""{greeting}, I'm Chunbo from Socialhub.AI. We're co-hosting an exclusive AI Roundtable with Microsoft {event['location_name']} - only 12 seats. Topic: Retail AI - From Pilot to Infrastructure. Would love to have you join us! Details: {event_link}"""
 
     return {'subject': subject, 'message': message, 'short_message': short_message}
 

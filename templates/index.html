@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>新加坡活动联系人管理系统 - 数据库版</title>
+    <title>Hong Kong Event Contact Manager - Database Edition</title>
     <style>
         * {
             margin: 0;
@@ -663,8 +663,8 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1>🎯 新加坡活动联系人管理系统</h1>
-            <div class="subtitle">💾 数据保存到SQLite数据库 - 永久保存，可备份</div>
+            <h1>Hong Kong Event Contact Manager</h1>
+            <div class="subtitle">SQLite database mode with persistent contact history</div>
 
             <div class="controls">
                 <div class="file-input-wrapper">
@@ -790,7 +790,7 @@
         let deleteTarget = null;
         let compactView = false;
         let currentStatusFilter = 'all';
-        let currentCityFilter = '';
+        let currentCityFilter = 'Hong Kong';
 
         // 显示提示消息
         function showToast(message, type = 'success') {
