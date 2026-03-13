@@ -294,6 +294,35 @@
             margin: 6px 0;
         }
 
+        .compact-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 14px;
+        }
+
+        .compact-actions .btn {
+            flex: 1;
+            padding: 10px 14px;
+        }
+
+        .compact-status {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 110px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 700;
+            padding: 10px 12px;
+            background: #eef2ff;
+            color: #3f51b5;
+        }
+
+        .compact-status.invited {
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+
         .detail-row {
             display: flex;
             align-items: flex-start;
@@ -1006,12 +1035,28 @@
                     row.remove();
                 }
             });
+
+            const email = card.dataset.email;
+            const invited = card.dataset.linkedinInvited === '1';
+            const actions = document.createElement('div');
+            actions.className = 'compact-actions';
+            actions.innerHTML = `
+                <button class="btn" style="background: #0077b5; color: white;" onclick="copyLinkedInConnectMessageDirect('${email}')">
+                    Copy Connect
+                </button>
+                <div class="compact-status ${invited ? 'invited' : ''}">
+                    ${invited ? '已邀请 Connect' : '未邀请 Connect'}
+                </div>
+            `;
+            card.appendChild(actions);
         }
 
         // 创建联系人卡片
         function createContactCard(contact, index) {
             const card = document.createElement('div');
             card.className = 'contact-card';
+            card.dataset.email = contact.email || '';
+            card.dataset.linkedinInvited = contact.linkedin_contacted ? '1' : '0';
 
             const priorityClass = (contact.priority || '').includes('A') ? 'priority-A' :
                                  (contact.priority || '').includes('B') ? 'priority-B' : 'priority-C';
@@ -1051,8 +1096,8 @@
                 </div>
 
                 <div class="info-section" style="display: flex; gap: 10px;">
-                    <button class="btn" style="flex: 1; background: #0077b5; color: white;" onclick="copyLinkedInMessageDirect('${contact.email}')">
-                        📋 一键复制LinkedIn邀请消息
+                    <button class="btn" style="flex: 1; background: #0077b5; color: white;" onclick="copyLinkedInConnectMessageDirect('${contact.email}')">
+                        Copy Connect
                     </button>
                     <button class="btn" style="background: #5f3a85; color: white;" onclick="generateLinkedInMessage('${contact.email}')">
                         👁️ 预览
@@ -1098,13 +1143,13 @@
                     <h4>📞 联系方式状态</h4>
 
                     <div class="method-item">
-                        <span class="method-label" style="cursor: pointer;" onclick="copyLinkedInMessageDirect('${contact.email}')" title="点击复制邀请消息">
+                        <span class="method-label" style="cursor: pointer;" onclick="copyLinkedInConnectMessageDirect('${contact.email}')" title="点击复制 Connect 信息">
                             <svg class="method-icon" fill="#0077b5" viewBox="0 0 24 24"><path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/></svg>
-                            LinkedIn <span style="font-size: 10px; color: #0077b5;">(点击复制消息)</span>
+                            LinkedIn <span style="font-size: 10px; color: #0077b5;">(Copy Connect)</span>
                         </span>
                         <button class="status-btn ${contact.linkedin_contacted ? 'status-contacted' : 'status-not-contacted'}"
                                 onclick="toggleStatus('${contact.email}', 'linkedin_contacted', ${!contact.linkedin_contacted})">
-                            ${contact.linkedin_contacted ? '✓ 已联系' : '未联系'}
+                            ${contact.linkedin_contacted ? '已邀请' : '未邀请'}
                         </button>
                     </div>
 
@@ -1187,7 +1232,7 @@
         }
 
         // 切换联系状态
-        async function toggleStatus(email, field, value) {
+        async function updateStatusValue(email, field, value, reload = true) {
             try {
                 const response = await fetch('/api/update_status', {
                     method: 'POST',
@@ -1200,13 +1245,22 @@
                 const result = await response.json();
 
                 if (result.success) {
-                    loadContacts();
+                    if (reload) {
+                        loadContacts();
+                    }
+                    return true;
                 } else {
                     showToast('更新失败', 'error');
+                    return false;
                 }
             } catch (error) {
                 showToast('更新出错: ' + error.message, 'error');
+                return false;
             }
+        }
+
+        async function toggleStatus(email, field, value) {
+            await updateStatusValue(email, field, value, true);
         }
 
         // 保存备注
@@ -1272,13 +1326,34 @@
         }
 
         // 一键复制LinkedIn消息（不显示弹窗）
+        async function copyTextToClipboard(text) {
+            try {
+                await navigator.clipboard.writeText(text);
+                return true;
+            } catch (error) {
+                const textarea = document.createElement('textarea');
+                textarea.value = text;
+                textarea.style.position = 'fixed';
+                textarea.style.opacity = '0';
+                document.body.appendChild(textarea);
+                textarea.focus();
+                textarea.select();
+                const copied = document.execCommand('copy');
+                document.body.removeChild(textarea);
+                if (!copied) {
+                    throw error;
+                }
+                return true;
+            }
+        }
+
         async function copyLinkedInMessageDirect(email) {
             try {
                 const response = await fetch(`/api/generate_linkedin_message/${encodeURIComponent(email)}`);
                 const result = await response.json();
 
                 if (result.success) {
-                    await navigator.clipboard.writeText(result.message);
+                    await copyTextToClipboard(result.message);
                     let toastMsg = `✅ Copied message for ${result.contact.name}!`;
 
                     // Show warning if message exceeds limit
@@ -1291,6 +1366,25 @@
                 } else {
                     showToast('Failed: ' + (result.message || 'Unknown error'), 'error');
                 }
+            } catch (error) {
+                showToast('Copy error: ' + error.message, 'error');
+            }
+        }
+
+        async function copyLinkedInConnectMessageDirect(email) {
+            try {
+                const response = await fetch(`/api/generate_linkedin_message/${encodeURIComponent(email)}`);
+                const result = await response.json();
+
+                if (!result.success) {
+                    showToast('Failed: ' + (result.message || 'Unknown error'), 'error');
+                    return;
+                }
+
+                await copyTextToClipboard(result.connect_message);
+                await updateStatusValue(email, 'linkedin_contacted', true, false);
+                showToast(`Copied Connect note for ${result.contact.name} and marked as invited.`);
+                loadContacts();
             } catch (error) {
                 showToast('Copy error: ' + error.message, 'error');
             }

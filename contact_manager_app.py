@@ -663,7 +663,35 @@ Founder & CEO, Socialhub.AI
     # 300字符浓缩版本（用于LinkedIn连接请求）
     short_message = f"""{greeting}, I'm Chunbo from Socialhub.AI. We're co-hosting an exclusive AI Roundtable with Microsoft {event['location_name']} - only 12 seats. Topic: Retail AI - From Pilot to Infrastructure. Would love to have you join us! Details: {event_link}"""
 
-    return {'subject': subject, 'message': message, 'short_message': short_message}
+    connect_message = _build_connect_message(name, title, company, industry)
+    return {
+        'subject': subject,
+        'message': message,
+        'short_message': short_message,
+        'connect_message': connect_message
+    }
+
+def _build_connect_message(name, title, company, industry):
+    first_name = (name or '').split()[0] if name else 'there'
+
+    if title and company:
+        expertise_line = f"Given your work as {title} at {company},"
+    elif title:
+        expertise_line = f"Given your work as {title},"
+    elif company:
+        expertise_line = f"Given your work at {company},"
+    else:
+        expertise_line = "Given your industry experience,"
+
+    industry_line = f" especially in {industry}," if industry else ""
+
+    message = (
+        f"Hi {first_name}, I'm Chunbo Huang, Founder & CEO at Socialhub.AI. "
+        f"We help brands turn customer data and AI into scalable marketing, loyalty, and customer intelligence systems. "
+        f"{expertise_line}{industry_line} I'd love to connect and exchange views on how AI moves from pilot to scale in your industry."
+    )
+
+    return " ".join(message.split())
 
 def _build_personalized_reason(title, company, industry, employees):
     """根据职位、公司、行业生成专业的个性化邀请理由"""
@@ -741,26 +769,31 @@ def generate_linkedin_message(email):
         subject = result['subject']
         message = result['message']
         short_message = result['short_message']
+        connect_message = result['connect_message']
 
         # LinkedIn InMail limits: Subject ~200 chars, Body ~1900 chars
         # Connection request: ~300 chars
         subject_limit = 200
         message_limit = 1900
         short_message_limit = 300
+        connect_message_limit = 300
 
         subject_length = len(subject)
         message_length = len(message)
         short_message_length = len(short_message)
+        connect_message_length = len(connect_message)
 
         subject_warning = subject_length > subject_limit
         message_warning = message_length > message_limit
         short_message_warning = short_message_length > short_message_limit
+        connect_message_warning = connect_message_length > connect_message_limit
 
         return jsonify({
             'success': True,
             'subject': subject,
             'message': message,
             'short_message': short_message,
+            'connect_message': connect_message,
             'length_info': {
                 'subject_length': subject_length,
                 'subject_limit': subject_limit,
@@ -770,7 +803,10 @@ def generate_linkedin_message(email):
                 'message_warning': message_warning,
                 'short_message_length': short_message_length,
                 'short_message_limit': short_message_limit,
-                'short_message_warning': short_message_warning
+                'short_message_warning': short_message_warning,
+                'connect_message_length': connect_message_length,
+                'connect_message_limit': connect_message_limit,
+                'connect_message_warning': connect_message_warning
             },
             'contact': {
                 'name': contact_dict.get('name'),
