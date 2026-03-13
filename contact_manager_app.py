@@ -674,21 +674,19 @@ Founder & CEO, Socialhub.AI
 def _build_connect_message(name, title, company, industry):
     first_name = (name or '').split()[0] if name else 'there'
 
-    if title and company:
-        expertise_line = f"Given your work as {title} at {company},"
+    if company:
+        expertise_line = f"Your work at {company} stood out."
     elif title:
-        expertise_line = f"Given your work as {title},"
-    elif company:
-        expertise_line = f"Given your work at {company},"
+        expertise_line = f"Your work as {title} stood out."
+    elif industry:
+        expertise_line = f"Your experience in {industry} stood out."
     else:
-        expertise_line = "Given your industry experience,"
-
-    industry_line = f" especially in {industry}," if industry else ""
+        expertise_line = "Your background stood out."
 
     message = (
-        f"Hi {first_name}, I'm Chunbo Huang, Founder & CEO at Socialhub.AI. "
-        f"We help brands turn customer data and AI into scalable marketing, loyalty, and customer intelligence systems. "
-        f"{expertise_line}{industry_line} I'd love to connect and exchange views on how AI moves from pilot to scale in your industry."
+        f"Hi {first_name}, I'm Chunbo Huang, CEO at Socialhub.AI. "
+        f"We help brands turn AI and data into growth. "
+        f"{expertise_line} I'd value connecting to exchange views on taking AI from pilot to scale."
     )
 
     return " ".join(message.split())

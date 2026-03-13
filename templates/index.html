@@ -318,9 +318,18 @@
             color: #3f51b5;
         }
 
+        button.compact-status {
+            border: none;
+            cursor: pointer;
+        }
+
         .compact-status.invited {
             background: #e8f5e9;
             color: #2e7d32;
+        }
+
+        button.compact-status.invited {
+            cursor: default;
         }
 
         .detail-row {
@@ -1044,9 +1053,10 @@
                 <button class="btn" style="background: #0077b5; color: white;" onclick="copyLinkedInConnectMessageDirect('${email}')">
                     Copy Connect
                 </button>
-                <div class="compact-status ${invited ? 'invited' : ''}">
+                <button class="compact-status ${invited ? 'invited' : ''}"
+                        ${invited ? 'disabled' : `onclick="markLinkedInInvited('${email}')"`}>
                     ${invited ? '已邀请 Connect' : '未邀请 Connect'}
-                </div>
+                </button>
             `;
             card.appendChild(actions);
         }
@@ -1148,7 +1158,8 @@
                             LinkedIn <span style="font-size: 10px; color: #0077b5;">(Copy Connect)</span>
                         </span>
                         <button class="status-btn ${contact.linkedin_contacted ? 'status-contacted' : 'status-not-contacted'}"
-                                onclick="toggleStatus('${contact.email}', 'linkedin_contacted', ${!contact.linkedin_contacted})">
+                                onclick="${contact.linkedin_contacted ? '' : `markLinkedInInvited('${contact.email}')`}"
+                                ${contact.linkedin_contacted ? 'disabled' : ''}>
                             ${contact.linkedin_contacted ? '已邀请' : '未邀请'}
                         </button>
                     </div>
@@ -1261,6 +1272,14 @@
 
         async function toggleStatus(email, field, value) {
             await updateStatusValue(email, field, value, true);
+        }
+
+        async function markLinkedInInvited(email) {
+            const updated = await updateStatusValue(email, 'linkedin_contacted', true, false);
+            if (updated) {
+                showToast('已标记为 LinkedIn 已邀请');
+                loadContacts();
+            }
         }
 
         // 保存备注
