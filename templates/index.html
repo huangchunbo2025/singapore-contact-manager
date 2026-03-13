@@ -679,6 +679,9 @@
                 <button class="btn btn-secondary" id="viewToggleBtn" onclick="toggleCompactView()">🔍 紧凑视图</button>
                 <button class="btn btn-trash" onclick="showDeletedContacts()">🗑️ 回收站</button>
 
+                <select id="cityFilter" class="filter-search" style="max-width: 260px; flex: 0 0 260px;">
+                    <option value="">All Cities</option>
+                </select>
                 <input type="text" class="filter-search" id="searchInput" placeholder="🔍 搜索姓名、公司、职位、行业...">
             </div>
 
@@ -787,6 +790,7 @@
         let deleteTarget = null;
         let compactView = false;
         let currentStatusFilter = 'all';
+        let currentCityFilter = '';
 
         // 显示提示消息
         function showToast(message, type = 'success') {
@@ -803,7 +807,8 @@
         // 加载联系人数据
         async function loadContacts() {
             try {
-                const response = await fetch('/api/contacts');
+                const cityQuery = currentCityFilter ? `?city=${encodeURIComponent(currentCityFilter)}` : '';
+                const response = await fetch(`/api/contacts${cityQuery}`);
 
                 // 检查响应状态
                 if (!response.ok) {
@@ -833,6 +838,29 @@
             }
         }
 
+        async function loadCities() {
+            try {
+                const response = await fetch('/api/cities');
+                const result = await response.json();
+                const cityFilter = document.getElementById('cityFilter');
+                if (!cityFilter || !result.success) {
+                    return;
+                }
+
+                cityFilter.innerHTML = '<option value="">All Cities</option>';
+                result.data.forEach((item) => {
+                    const option = document.createElement('option');
+                    option.value = item.city;
+                    option.textContent = item.country ? `${item.city}, ${item.country} (${item.count})` : `${item.city} (${item.count})`;
+                    cityFilter.appendChild(option);
+                });
+
+                cityFilter.value = currentCityFilter;
+            } catch (error) {
+                console.error('Failed to load cities:', error);
+            }
+        }
+
         // 导入CSV文件
         document.getElementById('csvFile').addEventListener('change', async function(e) {
             const file = e.target.files[0];
@@ -851,6 +879,7 @@
 
                 if (result.success) {
                     showToast('CSV导入成功！');
+                    loadCities();
                     loadContacts();
                 } else {
                     showToast(result.message || '导入失败', 'error');
@@ -873,6 +902,11 @@
         // 搜索过滤
         document.getElementById('searchInput').addEventListener('input', function(e) {
             applyFilters();
+        });
+
+        document.getElementById('cityFilter').addEventListener('change', function(e) {
+            currentCityFilter = e.target.value || '';
+            loadContacts();
         });
 
         function setStatusFilter(filter) {
@@ -1008,6 +1042,7 @@
                 </div>
 
                 <div class="contact-details">
+                    ${(contact.city || contact.country) ? `<div class="detail-row"><span class="detail-label">📍 城市:</span><span class="detail-value">${[contact.city, contact.country].filter(Boolean).join(', ')}</span></div>` : ''}
                     ${contact.email ? `<div class="detail-row"><span class="detail-label">📧 邮箱:</span><span class="detail-value">${contact.email}</span></div>` : ''}
                     ${contact.phone ? `<div class="detail-row"><span class="detail-label">📱 手机:</span><span class="detail-value"><a href="https://wa.me/${contact.phone.replace(/[^0-9]/g, '')}" target="_blank" style="color: #25D366;">${contact.phone}</a></span></div>` : ''}
                     ${contact.website ? `<div class="detail-row"><span class="detail-label">🌐 官网:</span><span class="detail-value"><a href="${contact.website}" target="_blank">${contact.website}</a></span></div>` : ''}
@@ -1488,7 +1523,10 @@
         }
 
         // 页面加载时尝试加载数据
-        window.addEventListener('load', loadContacts);
+        window.addEventListener('load', async function() {
+            await loadCities();
+            await loadContacts();
+        });
     </script>
 </body>
 </html>

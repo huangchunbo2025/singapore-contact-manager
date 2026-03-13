@@ -69,6 +69,8 @@ def init_db():
             email TEXT UNIQUE,
             website TEXT,
             linkedin TEXT,
+            city TEXT,
+            country TEXT,
             industry TEXT,
             employees TEXT,
             priority TEXT,
@@ -94,6 +96,13 @@ def init_db():
         print("✓ 已添加 phone 列")
 
     # 联系状态表
+    if 'city' not in columns:
+        cursor.execute('ALTER TABLE contacts ADD COLUMN city TEXT')
+        print("Added city column")
+    if 'country' not in columns:
+        cursor.execute('ALTER TABLE contacts ADD COLUMN country TEXT')
+        print("Added country column")
+
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS contact_status (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -157,6 +166,8 @@ def import_csv_data(filepath):
             try:
                 # 检测CSV格式（Apollo格式 vs 旧格式）
                 is_apollo_format = 'First Name' in row or 'Email' in row
+                city = ''
+                country = ''
 
                 if is_apollo_format:
                     # Apollo CSV 格式
@@ -168,6 +179,8 @@ def import_csv_data(filepath):
                     email = row.get('Email', '')
                     website = row.get('Website', '')
                     linkedin = row.get('Person Linkedin Url', '')
+                    city = row.get('City', '') or row.get('Company City', '')
+                    country = row.get('Country', '') or row.get('Company Country', '')
                     industry = row.get('Industry', '')
                     employees = row.get('# Employees', '')
                     # 获取手机号：优先 Mobile Phone > Work Direct Phone > Corporate Phone
@@ -201,11 +214,11 @@ def import_csv_data(filepath):
 
                 cursor.execute('''
                     INSERT OR REPLACE INTO contacts
-                    (name, title, company, email, website, linkedin, industry, employees,
+                    (name, title, company, email, website, linkedin, city, country, industry, employees,
                      priority, background, approach, ms_products, marketing_tech, is_global, global_reason, phone, is_deleted)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)
                 ''', (
-                    name, title, company, email, website, linkedin, industry, employees,
+                    name, title, company, email, website, linkedin, city, country, industry, employees,
                     priority, background, approach, ms_products, marketing_tech, is_global, global_reason, phone
                 ))
 
@@ -225,13 +238,13 @@ def import_csv_data(filepath):
     return True
 
 # 获取所有联系人（排除已删除）
-def get_all_contacts():
+def get_all_contacts(city=None):
     try:
         conn = sqlite3.connect(app.config['DATABASE'])
         conn.row_factory = sqlite3.Row
         cursor = conn.cursor()
 
-        cursor.execute('''
+        query = '''
             SELECT c.*,
                    COALESCE(s.linkedin_contacted, 0) as linkedin_contacted,
                    COALESCE(s.whatsapp_contacted, 0) as whatsapp_contacted,
@@ -243,8 +256,13 @@ def get_all_contacts():
             FROM contacts c
             LEFT JOIN contact_status s ON c.email = s.email
             WHERE c.is_deleted = 0
-            ORDER BY CAST(c.employees AS INTEGER) DESC
-        ''')
+        '''
+        params = []
+        if city:
+            query += ' AND LOWER(COALESCE(c.city, "")) = LOWER(?)'
+            params.append(city)
+        query += ' ORDER BY CAST(c.employees AS INTEGER) DESC'
+        cursor.execute(query, params)
 
         contacts = [dict(row) for row in cursor.fetchall()]
         conn.close()
@@ -255,6 +273,26 @@ def get_all_contacts():
         return []
 
 # 更新联系状态
+def get_city_summary():
+    conn = sqlite3.connect(app.config['DATABASE'])
+    conn.row_factory = sqlite3.Row
+    cursor = conn.cursor()
+
+    cursor.execute('''
+        SELECT
+            TRIM(COALESCE(city, '')) as city,
+            TRIM(COALESCE(country, '')) as country,
+            COUNT(*) as count
+        FROM contacts
+        WHERE is_deleted = 0 AND TRIM(COALESCE(city, '')) != ''
+        GROUP BY TRIM(COALESCE(city, '')), TRIM(COALESCE(country, ''))
+        ORDER BY count DESC, city ASC
+    ''')
+
+    cities = [dict(row) for row in cursor.fetchall()]
+    conn.close()
+    return cities
+
 def update_contact_status(email, field, value):
     conn = sqlite3.connect(app.config['DATABASE'])
     cursor = conn.cursor()
@@ -445,10 +483,18 @@ def upload_csv():
 @app.route('/api/contacts')
 def get_contacts():
     try:
-        contacts = get_all_contacts()
+        city = request.args.get('city', '').strip()
+        contacts = get_all_contacts(city=city or None)
         return jsonify({'success': True, 'data': contacts})
     except Exception as e:
         print(f"❌ API错误：{e}")
+        return jsonify({'success': False, 'message': str(e), 'data': []})
+
+@app.route('/api/cities')
+def get_cities():
+    try:
+        return jsonify({'success': True, 'data': get_city_summary()})
+    except Exception as e:
         return jsonify({'success': False, 'message': str(e), 'data': []})
 
 @app.route('/api/update_status', methods=['POST'])
