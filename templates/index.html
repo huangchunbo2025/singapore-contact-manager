@@ -675,6 +675,7 @@
                 <button class="btn" id="sortBtn" onclick="sortBySize()">📊 按公司规模排序</button>
                 <button class="btn" id="exportBtn" onclick="exportData()">💾 导出联系记录</button>
                 <button class="btn" id="exportRespondedBtn" onclick="exportRespondedData()">📥 导出有响应名单</button>
+                <button class="btn" onclick="importDefaultData()">📂 导入默认香港数据</button>
                 <button class="btn" onclick="loadContacts()">🔄 刷新数据</button>
                 <button class="btn btn-secondary" id="viewToggleBtn" onclick="toggleCompactView()">🔍 紧凑视图</button>
                 <button class="btn btn-trash" onclick="showDeletedContacts()">🗑️ 回收站</button>
@@ -1504,6 +1505,30 @@
 
         function exportRespondedData() {
             window.location.href = '/api/export_responded';
+        }
+
+        async function importDefaultData() {
+            const confirmed = window.confirm('This will overwrite the current database with the bundled Hong Kong CSV data. Continue?');
+            if (!confirmed) {
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/import_default', {
+                    method: 'POST'
+                });
+                const result = await response.json();
+
+                if (result.success) {
+                    showToast('默认香港数据已导入');
+                    await loadCities();
+                    await loadContacts();
+                } else {
+                    showToast(result.message || '导入失败', 'error');
+                }
+            } catch (error) {
+                showToast('导入出错: ' + error.message, 'error');
+            }
         }
 
         // 点击弹窗外部关闭

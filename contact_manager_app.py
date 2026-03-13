@@ -480,6 +480,19 @@ def upload_csv():
 
     return jsonify({'success': False, 'message': '请上传CSV文件'})
 
+@app.route('/api/import_default', methods=['POST'])
+def import_default_csv():
+    data_file = os.path.join(os.path.dirname(__file__), 'data.csv')
+
+    if not os.path.exists(data_file):
+        return jsonify({'success': False, 'message': 'Default CSV file not found'})
+
+    try:
+        import_csv_data(data_file)
+        return jsonify({'success': True, 'message': 'Default CSV imported successfully'})
+    except Exception as e:
+        return jsonify({'success': False, 'message': f'Import failed: {str(e)}'})
+
 @app.route('/api/contacts')
 def get_contacts():
     try:
