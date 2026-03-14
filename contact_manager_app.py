@@ -686,7 +686,7 @@ def _build_connect_message(name, title, company, industry):
     message = (
         f"Hi {first_name}, I'm Chunbo Huang, CEO at Socialhub.AI. "
         f"We help brands turn AI and data into growth. "
-        f"{expertise_line} I'd value connecting to exchange views on taking AI from pilot to scale."
+        f"{expertise_line} In April, we're co-hosting a small industry roundtable with Microsoft to hear expert views on AI and how it moves from pilot to scale. I'd value connecting and exchanging ideas."
     )
 
     return " ".join(message.split())
