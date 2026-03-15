@@ -673,23 +673,32 @@ Founder & CEO, Socialhub.AI
 
 def _build_connect_message(name, title, company, industry):
     first_name = (name or '').split()[0] if name else 'there'
+    company_short = (company or '').strip()
+    title_short = (title or '').strip()
+    industry_short = (industry or '').strip()
 
-    if company:
-        expertise_line = f"Your work at {company} stood out."
-    elif title:
-        expertise_line = f"Your work as {title} stood out."
-    elif industry:
-        expertise_line = f"Your experience in {industry} stood out."
+    if company_short:
+        company_short = company_short[:36].rstrip(",. ")
+        expertise_line = f"Your work at {company_short} stood out."
+    elif title_short:
+        title_short = title_short[:42].rstrip(",. ")
+        expertise_line = f"Your role as {title_short} stood out."
+    elif industry_short:
+        industry_short = industry_short[:24].rstrip(",. ")
+        expertise_line = f"Your experience in {industry_short} stood out."
     else:
         expertise_line = "Your background stood out."
 
     message = (
         f"Hi {first_name}, I'm Chunbo Huang, CEO at Socialhub.AI. "
-        f"We help brands turn AI and data into growth. "
-        f"{expertise_line} In April, we're co-hosting a small industry roundtable with Microsoft to hear expert views on AI and how it moves from pilot to scale. I'd value connecting and exchanging ideas."
+        f"We help brands use AI and data to drive growth. "
+        f"{expertise_line} In April, we're hosting a small Microsoft roundtable to hear expert views on AI from pilot to scale. I'd value connecting."
     )
 
-    return " ".join(message.split())
+    message = " ".join(message.split())
+    if len(message) > 300:
+        message = message[:297].rstrip(" ,.;:") + "..."
+    return message
 
 def _build_personalized_reason(title, company, industry, employees):
     """根据职位、公司、行业生成专业的个性化邀请理由"""
